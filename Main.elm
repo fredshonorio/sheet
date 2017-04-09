@@ -10,8 +10,8 @@ init =
     matrix 10 10 (\(r, c) -> (InputCell (toString r ++ toString c)))
 
 
-resolve : Matrix InputCell -> Matrix RenderedCell
-resolve mat =
+evaluate : Matrix InputCell -> Matrix RenderedCell
+evaluate mat =
     let
         res =
             \{ input } -> Show False input
@@ -21,7 +21,7 @@ resolve mat =
 
 view : Matrix InputCell -> Html msg
 view sheet =
-    div [] [ sheet |> resolve |> show ]
+    div [] [ sheet |> evaluate |> show ]
 
 
 update = always
