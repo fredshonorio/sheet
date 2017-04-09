@@ -1,7 +1,8 @@
-module Cell exposing (InputCell, RenderedCell(..), show)
+module Cell exposing (InputCell, RenderedCell, show, Model, Mode(..))
 
 import Html exposing (Html, text, tr, table, td)
-import Matrix exposing (Matrix, matrix)
+import Html.Attributes exposing (style)
+import Matrix exposing (Matrix, Location, matrix)
 
 
 type alias InputCell =
@@ -9,17 +10,20 @@ type alias InputCell =
     }
 
 
-type alias Selected =
-    Bool
+type Mode
+    = Editing
+    | Show
+    | Selected
 
 
-type RenderedCell
-    = Editing InputCell
-    | Show Selected String
+type alias RenderedCell =
+    { value : String, mode : Mode }
 
 
 type alias Model =
-    Matrix InputCell
+    { sheet : Matrix InputCell
+    , selected : Maybe Location
+    }
 
 
 show : Matrix RenderedCell -> Html msg
@@ -37,14 +41,17 @@ showRow row =
 
 
 showCell : RenderedCell -> Html msg
-showCell i =
+showCell cell =
     let
         t =
-            case i of
-                Editing _ ->
-                    ""
+            cell.value
 
-                Show _ s ->
-                    s
+        st =
+            case cell.mode of
+                Selected ->
+                    [ style [ ( "background-color", "powderblue" ) ] ]
+
+                _ ->
+                    []
     in
-        td [] [ text t ]
+        td st [ text t ]

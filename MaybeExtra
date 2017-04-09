@@ -1,0 +1,3 @@
+
+
+contains : comparable -> Maybe comparable -> Bool
