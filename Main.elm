@@ -61,9 +61,6 @@ select code =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg { sheet, selected } =
     let
-        nothing =
-            Debug.log (toString selected) msg
-
         s =
             case msg of
                 Key code ->
