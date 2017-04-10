@@ -9,8 +9,9 @@ import Platform.Cmd
 import Navigation exposing (Size, direction, updateSelection)
 import Msg exposing (Msg(..))
 import Cell exposing (Model)
-import MaybeExtra
-
+import Cursor exposing (Cursor)
+import Task
+import Dom
 
 dimensions : Size
 dimensions =
@@ -21,16 +22,25 @@ init : Model
 init =
     { sheet =
         matrix (Tuple.first dimensions) (Tuple.second dimensions) (\( r, c ) -> (InputCell (toString r ++ toString c)))
-    , selected = Just ( 0, 0 )
+    , cursor = Cursor.CSelected ( 0, 0 )
     }
 
 
-selectCell : Maybe Location -> Location -> Mode
-selectCell selected location =
-    if MaybeExtra.contains location selected then
-        Selected
-    else
-        Show
+cellMode : Cursor -> Location -> Mode
+cellMode cursor cellLocation =
+    let
+        isThis =
+            (Cursor.location cursor) == cellLocation
+    in
+        case ( cursor, isThis ) of
+            ( Cursor.CSelected _, True ) ->
+                Selected
+
+            ( Cursor.CEditing _ _, True ) ->
+                Editing
+
+            _ ->
+                Show
 
 
 flip : Location -> Location
@@ -39,10 +49,10 @@ flip ( x, y ) =
 
 
 evaluate : Model -> Matrix RenderedCell
-evaluate { sheet, selected } =
+evaluate { sheet, cursor } =
     let
         res =
-            \loc { input } -> { value = input, mode = (selectCell selected (flip loc)) }
+            \loc { input } -> { value = input, mode = (cellMode cursor (flip loc)), location = loc }
     in
         -- the old (i, j), (j, i) debacle
         Matrix.mapWithLocation res sheet
@@ -58,18 +68,91 @@ select code =
     code |> direction |> updateSelection dimensions
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg { sheet, selected } =
+updateCursor : Keyboard.KeyCode -> Model -> (Cursor, Bool)
+updateCursor code { sheet, cursor } =
     let
-        s =
+        location =
+            Cursor.location cursor
+
+        prevValue =
+            (Matrix.get location sheet) |> Maybe.map .input |> Maybe.withDefault ""
+
+        return =
+            Navigation.isReturn code
+
+        editing =
+            Cursor.isEditing cursor
+
+        valid =
+            Navigation.validDirection code
+    in
+        case ( return, editing, valid ) of
+            ( True, True, _ ) ->
+                {- stop editing cell -}
+                (Cursor.CSelected location, False)
+
+            ( True, False, _ ) ->
+                {- start editing cell -}
+                (Cursor.CEditing (location) prevValue, True)
+
+            ( False, True, _ ) ->
+                {- keep editing cell -}
+                (Cursor.CEditing (location) prevValue, False)
+
+            ( False, False, True ) ->
+                {- navigate -}
+                (Cursor.CSelected (select code location), False)
+
+            ( False, False, False ) ->
+                {--do nothing-}
+                (cursor, False)
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg ({ sheet, cursor } as model) =
+    let
+        (cursor_, shouldFocus) =
             case msg of
                 Key code ->
-                    Maybe.map (select code) selected
+                    updateCursor code model
 
-                _ ->
-                    selected
+                Set _ _ ->
+                    (cursor, False)
+
+                NoOp ->
+                    (cursor, False)
+                Focus _ ->
+                    (cursor, False)
+
+        sheet_ =
+            case msg of
+                Set loc value ->
+                    sheet |> Matrix.set loc (InputCell value)
+
+                Key _ ->
+                    sheet
+
+                NoOp ->
+                    sheet
+
+                Focus _ ->
+                        sheet
+
+        nothing0 =
+            Debug.log "msg" msg
+
+        nothing1 =
+            Debug.log "cursor_" cursor_
+
+        nothing2 =
+            Debug.log "sheet_" sheet_
+
+        cmd = if shouldFocus then
+            Task.attempt Focus (Dom.focus Navigation.inFocus)
+          else
+            Cmd.none
     in
-        ( Model sheet s, Cmd.none )
+        ( Model sheet cursor_, cmd )
 
 
 main : Program Never Model Msg

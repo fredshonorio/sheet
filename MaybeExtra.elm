@@ -9,3 +9,6 @@ contains a ma =
 
         Nothing ->
             False
+
+(?) : Maybe a -> a -> a
+(?) = flip Maybe.withDefault

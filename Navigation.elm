@@ -2,6 +2,12 @@ module Navigation exposing (..)
 
 import Keyboard exposing (KeyCode)
 import Matrix exposing (Location)
+import Dom
+
+
+inFocus : Dom.Id
+inFocus =
+    "inFocus"
 
 
 type Direction
@@ -14,6 +20,11 @@ type Direction
 
 type alias Size =
     ( Int, Int )
+
+
+isReturn : KeyCode -> Bool
+isReturn =
+    (==) 13
 
 
 direction : KeyCode -> Direction
@@ -33,6 +44,16 @@ direction code =
 
         _ ->
             None
+
+
+validDirection : KeyCode -> Bool
+validDirection code =
+    case (direction code) of
+        None ->
+            False
+
+        _ ->
+            True
 
 
 updateSelection : Size -> Direction -> Location -> Location

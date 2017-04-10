@@ -1,4 +1,7 @@
 - edit cell contents
+ - ~select cell~
+ - ~set focus~
+ - change cell value
 - evaluate
  - parse s-expression
  - function definition ( sum : List (Int | Cell Int) )

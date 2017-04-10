@@ -1,13 +1,16 @@
 module Cell exposing (InputCell, RenderedCell, show, Model, Mode(..))
 
-import Html exposing (Html, text, tr, table, td)
-import Html.Attributes exposing (style)
+import Html exposing (Html, text, tr, table, td, input)
+import Html.Attributes exposing (style, id)
+import Html.Events exposing (onInput)
 import Matrix exposing (Matrix, Location, matrix)
+import Cursor exposing (Cursor)
+import Msg exposing (Msg)
+import Navigation
 
 
 type alias InputCell =
-    { input : String
-    }
+    { input : String }
 
 
 type Mode
@@ -17,41 +20,50 @@ type Mode
 
 
 type alias RenderedCell =
-    { value : String, mode : Mode }
+    { value : String, mode : Mode, location : Location }
 
 
 type alias Model =
-    { sheet : Matrix InputCell
-    , selected : Maybe Location
-    }
+    { sheet : Matrix InputCell, cursor : Cursor }
 
 
-show : Matrix RenderedCell -> Html msg
+show : Matrix RenderedCell -> Html Msg
 show sheet =
     Matrix.toList sheet
         |> List.map showRow
         |> table []
 
 
-showRow : List RenderedCell -> Html msg
+showRow : List RenderedCell -> Html Msg
 showRow row =
     row
         |> List.map showCell
         |> tr []
 
 
-showCell : RenderedCell -> Html msg
-showCell cell =
+showCell : RenderedCell -> Html Msg
+showCell { value, mode, location } =
     let
-        t =
-            cell.value
+        common =
+            [ ( "width", "50px" ) ]
 
-        st =
-            case cell.mode of
+        cellStyle =
+            case mode of
                 Selected ->
-                    [ style [ ( "background-color", "powderblue" ) ] ]
+                    [ ( "background-color", "powderblue" ) ]
 
                 _ ->
                     []
+
+        cellElement =
+            case mode of
+                Editing ->
+                    input [ onInput (Msg.Set location), id Navigation.inFocus ] []
+
+                Show ->
+                    text value
+
+                Selected ->
+                    text value
     in
-        td st [ text t ]
+        td [ style (common ++ cellStyle) ] [ cellElement ]
