@@ -56,11 +56,12 @@ updateSelection size dir ( x, y ) =
 
 clamp0 : Int -> Int -> Int
 clamp0 mi i =
-  max 0 (min (mi - 1) i)
+    max 0 (min (mi - 1) i)
+
 
 clampX : Size -> Int -> Int
 clampX ( maxX, _ ) =
-  clamp0 maxX
+    clamp0 maxX
 
 
 clampY : Size -> Int -> Int
