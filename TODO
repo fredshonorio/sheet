@@ -1,2 +1,5 @@
 - edit cell contents
 - evaluate
+ - parse s-expression
+ - function definition ( sum : List (Int | Cell Int) )
+ - cell references
